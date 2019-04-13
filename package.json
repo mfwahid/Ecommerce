@@ -1,0 +1,9 @@
+{
+  "name": "ecommerce-demo",
+  "version": "1.0.0",
+  "dependencies": {
+    "express": "~4.16.0",
+    "mysql": "^2.16.0",
+    "ejs": "^2.6.1"
+  }
+}

@@ -1,0 +1,77 @@
+<html>
+	<head>
+
+			<!-- <script type="text/javascript">
+					function delete_id(item_id) {
+						// alert("Delete?");
+						var result = confirm("Delete?");
+						if (result === true) {
+								$.ajax({
+									type: "DELETE",
+									url: "delete_item",
+									data: "id=" + item_id,
+									success: function(msg){
+										alert("Data Deleted: " + msg);
+									}
+							});
+						} else {
+							return;
+						}
+					}
+
+			</script> -->
+			<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+			<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+			<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+			<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+			<script>
+					function open_admin() {
+							location.href = "http://127.0.0.1:3000/admin.html";
+					}
+					function open_buyer() {
+						location.href = "http://127.0.0.1:3000/buyer";
+					}
+			</script>
+
+	</head>
+	<body>
+		<div class="jumbotron my-auto text-center">
+
+				<button class="btn btn-primary" onclick="open_admin()">Login As Admin</button>
+				<button class="btn btn-primary" onclick="open_buyer()">Login As Buyer</button>
+		</div>
+
+		<table border="1" cellpadding="7" cellspacing="7">
+		<tr>
+			<!-- <th width="50px">No</th> -->
+			<th>Item Id</th>
+			<th>Item Name</th>
+			<th>Price</th>
+			<th>Quantity</th>
+			<th>Delete?</th>
+		</tr>
+		<% if(data.length){
+			for(var i = 0;i < data.length;i++) { %>
+		<tr>
+			<!-- <td><%=(i+1)%></td> -->
+			<td><%=data[i].item_id%></td>
+			<td><%=data[i].item_name%></td>
+			<td><%=data[i].item_price%></td>
+			<td><%=data[i].item_quantity%></td>
+			<!-- <td> <button class="btn btn-primary" type="button" onclick="delete_id(<%=data[i].item_id%>);">Delete</button> </td> -->
+			<td><form method="delete" action="/delete_item/<%= data[i].item_id %>">
+				<input type="submit" name="delete" value='Delete' onClick="return confirm('Are you sure you want to delete?')" />
+				<input type="hidden" name="_method" value="DELETE" />
+			</form>
+			</td>
+
+		</tr>
+		<% }
+		}else{ %>
+		<tr>
+			<td colspan="4">No items</td>
+		</tr>
+		<% } %>
+		</table>
+	</body>
+</html>

@@ -1,0 +1,105 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+		<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+		<script>
+			function validateForm() {
+				var orderQuantity = parseInt(document.forms["buy"]["order_quantity"].value);
+				var tdElem = document.getElementById ("item_quantity_available" );
+				var quantityAvailable = parseInt(tdElem.innerHTML);
+
+				// alert("quantityAvailable = " + quantityAvailable + " orderQuantity = " + orderQuantity);
+
+				if (orderQuantity > quantityAvailable) {
+					alert("Not enough stock");
+					window.location.href = "http://127.0.0.1:3000/buyer";
+   					return false;
+				} else if (!!orderQuantity){
+					var tdElemPrice = document.getElementById ("item_price" );
+					var price = parseInt(tdElemPrice.innerHTML);
+					alert("Pay " +  orderQuantity * price + " INR ");
+				}
+			}
+
+			function open_admin() {
+					location.href = "http://127.0.0.1:3000/admin.html";
+			}
+			function open_buyer() {
+				location.href = "http://127.0.0.1:3000/buyer";
+			}
+		</script>
+
+	</head>
+	<body>
+
+
+		<!-- <div class="container" > -->
+			<div class="jumbotron my-auto text-center">
+
+				<button class="btn btn-primary" onclick="open_admin()">Login As Admin</button>
+				<button class="btn btn-primary" onclick="open_buyer()">Login As Buyer</button>
+			</div>
+
+		<!-- </div> -->
+		<div class=" my-auto text-center">
+			<table border="1" cellpadding="7" cellspacing="7">
+			<tr>
+				<!-- <th width="50px">No</th> -->
+				<th>Item Id</th>
+				<th>Item Name</th>
+				<th>Price</th>
+				<th>Available</th>
+				<th>Order</th>
+				<!-- <th>Edit?</th> -->
+			</tr>
+			<% if(data.length){
+				for(var i = 0;i < data.length;i++) { %>
+			<tr>
+				<!-- <td><%=(i+1)%></td> -->
+				<td><%=data[i].item_id%></td>
+				<td><%=data[i].item_name%></td>
+				<td id="item_price"><%=data[i].item_price%></td>
+				<td id="item_quantity_available"><%=data[i].item_quantity%></td>
+				<td>
+						<form name="buy" class="form-horizontal" action="/buy_item/<%= data[i].item_id %>/<%= data[i].item_quantity %>" method = "get">
+							<div class="form-group">
+
+
+
+							<div class="form-group">
+								<label class="control-label col-sm-2" for="item_quantity">Quantity:</label>
+								<div class="col-sm-10">
+									<input type="number" class="form-control" id="order_quantity"   min="1" placeholder="Order Quantity" name="order_quantity" required="required">
+								</div>
+							</div>
+
+
+							<div class="form-group">
+							<div class="col-sm-offset-2 col-sm-10">
+								<button type="submit"  type="button" class="btn btn-primary" onClick="return validateForm()">Buy</button>
+							</div>
+							</div>
+						</form>
+
+				</td>
+				<!-- <td> <button class="btn btn-primary" type="button" onclick="delete_id(<%=data[i].item_id%>);">Delete</button> </td> -->
+				<!-- <td><form method="get" action="/update_item/<%= data[i].item_id %>">
+					<input type="submit" name="edit" value='edit' onClick="return confirm('Are you sure you want to edit?')" />
+				</form>
+				</td> -->
+
+			</tr>
+			<% }
+			}else{ %>
+			<tr>
+				<td colspan="4">No items</td>
+			</tr>
+			<% } %>
+			</table>
+		</div>
+	</body>
+</html>
+
+
