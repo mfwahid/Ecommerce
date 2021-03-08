@@ -7,10 +7,10 @@
 		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 		<script>
 				function open_admin() {
-						location.href = "http://127.0.0.1:3000/admin.html";
+						location.href = "/admin.html";
 				}
 				function open_buyer() {
-					location.href = "http://127.0.0.1:3000/buyer";
+					location.href = "/buyer";
 				}
 		</script>
 	</head>
@@ -24,7 +24,7 @@
 		<div class="jumbotron">
 			<div class="container">
 				<h2 class="text-center">Add new items in the product list</h2>
-				<form class="form-horizontal" action = "http://127.0.0.1:3000/insert_item" method = "GET">
+				<form class="form-horizontal" action = "/insert_item" method = "GET">
 					<label class="control-label col-sm-2" for="item_id"  type="hidden" value="<%= data[0].item_id %>"></label>
 					<div class="form-group">
 					<label class="control-label col-sm-2" for="item_name" >Name:</label>

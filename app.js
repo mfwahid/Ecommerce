@@ -3,11 +3,12 @@ const mysql = require('mysql');
 const app = express();
 
 app.set('view engine', 'ejs');
+app.set('views', '/home/ec2-user/mygit/ecommerce-demo/views');
 
 const connection = mysql.createConnection({
-	host: 'localhost',
-	user: <enter-database-username>,
-	password: <enter-database-user-password>,
+	host: 'database-1.cluster-cjk5pipzji3f.ap-south-1.rds.amazonaws.com',
+	user: 'admin',
+	password: 'admin12345',
 	database: 'ecommerceDemo',
 });
 
@@ -21,7 +22,7 @@ connection.connect(function (error) {
 	}
 });
 
-app.use(express.static('public'));
+app.use(express.static('/home/ec2-user/mygit/ecommerce-demo/public'));
 app.get('/index.html', function (req, res) {
 	res.sendFile( __dirname + "/" + "index.html" );
  })
@@ -86,7 +87,7 @@ app.get('/insert_item', function (request, response) {
 	// response.end(JSON.stringify(result));
 	response.type('.html');
 	// response.end('Successfuly added new item' <script>
-	response.end("<h1>Successfuly added new item<h1><script> setTimeout(function() { window.location.href = \"http://127.0.0.1:3000/admin.html\";}, 500); </script>");
+	response.end("<h1>Successfuly added new item<h1><script> setTimeout(function() { window.location.href = \"/admin.html\";}, 500); </script>");
 	// response.redirect("http://127.0.0.1:3000/admin.html");
 });
 
@@ -110,7 +111,7 @@ app.get('/delete_item/(:id)', function (request, response) {
 		} else {
 			console.log('Successful query');
 			// response.flash('Successfully Deleted')
-			response.redirect("http://127.0.0.1:3000/delete_items");
+			response.redirect("/delete_items");
 		}
 	});
 
@@ -163,7 +164,7 @@ app.get('/edit_item/(:id)', function (request, response) {
 		} else {
 			console.log('Successful query');
 			// response.flash('Successfully Deleted')
-			response.redirect("http://127.0.0.1:3000/edit_items");
+			response.redirect("/edit_items");
 		}
 	});
 
@@ -199,7 +200,7 @@ app.get('/buy_item/:id/:item_quantity', function (request, response) {
 		} else {
 			console.log('Successful query');
 			// response.flash('Successfully Deleted')
-			response.end("<h1>Successfuly Purchased new item<h1><script> setTimeout(function() { window.location.href = \"http://127.0.0.1:3000/buyer\";}, 1000); </script>");
+			response.end("<h1>Successfuly Purchased new item<h1><script> setTimeout(function() { window.location.href = \"/buyer\";}, 1000); </script>");
 
 			// response.redirect("http://127.0.0.1:3000/buyer");
 		}

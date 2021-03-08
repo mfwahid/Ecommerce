@@ -14,9 +14,11 @@
 
 				if (orderQuantity > quantityAvailable) {
 					alert("Not enough stock");
-					window.location.href = "http://127.0.0.1:3000/buyer";
+					window.location.href = "/buyer";
    					return false;
-				} else if (!!orderQuantity){
+				} 
+				else if (!!orderQuantity){
+				//else {
 					var tdElemPrice = document.getElementById ("item_price" );
 					var price = parseInt(tdElemPrice.innerHTML);
 					alert("Pay " +  orderQuantity * price + " INR ");
@@ -24,10 +26,10 @@
 			}
 
 			function open_admin() {
-					location.href = "http://127.0.0.1:3000/admin.html";
+					location.href = "/admin.html";
 			}
 			function open_buyer() {
-				location.href = "http://127.0.0.1:3000/buyer";
+				location.href = "/buyer";
 			}
 		</script>
 
