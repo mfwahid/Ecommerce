@@ -6,7 +6,7 @@ app.set('view engine', 'ejs');
 app.set('views', '/home/ec2-user/mygit/ecommerce-demo/views');
 
 const connection = mysql.createConnection({
-	host: 'database-1.cluster-cjk5pipzji3f.ap-south-1.rds.amazonaws.com',
+	host: 'octankemalldb-cluster.cluster-cjk5pipzji3f.ap-south-1.rds.amazonaws.com',
 	user: 'admin',
 	password: 'admin12345',
 	database: 'ecommerceDemo',
