@@ -1,4 +1,4 @@
-# ecommerce-demo
+# ecommerce - Octank -demo
 
 This is simple ecommerce web application made using Node.js and MYSQL Database which includes simple features like
   -  CRUD operations on items
@@ -12,7 +12,7 @@ This is simple ecommerce web application made using Node.js and MYSQL Database w
   - Copy content of `ecommerce-demo-dump.sql` to your your database
 
 
-
+  
 
 ### Tech
 

@@ -9,3 +9,4 @@ CREATE TABLE `items` (
 
 INSERT INTO items (item_name,item_price,item_quantity) VALUES('Mouse','100','400');
 INSERT INTO items (item_name,item_price,item_quantity) VALUES('Monitor','5000','150');
+-- demo

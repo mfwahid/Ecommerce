@@ -5,13 +5,14 @@ const app = express();
 app.set('view engine', 'ejs');
 app.set('views', '/home/ec2-user/mygit/ecommerce-demo/views');
 
+//Aurora Connection String
 const connection = mysql.createConnection({
 	host: 'octankemalldb-cluster.cluster-cjk5pipzji3f.ap-south-1.rds.amazonaws.com',
 	user: 'admin',
 	password: 'admin12345',
 	database: 'ecommerceDemo',
 });
-
+//Aurora Connection String
 
 connection.connect(function (error) {
 
