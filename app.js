@@ -1,29 +1,50 @@
 const express = require('express');
 const mysql = require('mysql');
+const ssmps = require('./modules/secrets');
 const app = express();
 
 app.set('view engine', 'ejs');
 app.set('views', '/home/ec2-user/mygit/ecommerce-demo/views');
-
-//Aurora Connection String
-const connection = mysql.createConnection({
-	host: 'octankemalldb-cluster.cluster-cjk5pipzji3f.ap-south-1.rds.amazonaws.com',
-	user: 'admin',
-	password: 'admin12345',
-	database: 'ecommerceDemo',
-});
-//Aurora Connection String
-
-connection.connect(function (error) {
-
-	if (!!error) {
-		console.log('Error');
-	} else {
-		console.log('Connected');
-	}
-});
-
 app.use(express.static('/home/ec2-user/mygit/ecommerce-demo/public'));
+
+
+//app.set('views', '/Users/bdwahee/Waheed/Works/POC/Github/Octank/Ecommerce/views');
+//app.use(express.static('/Users/bdwahee/Waheed/Works/POC/Github/Octank/Ecommerce/public'));
+
+var connectionString, user, password;
+var connection;
+(async () =>  {
+    try {
+         connectionString = await ssmps.getSecret('octankDBWriter','prod');
+         database = await ssmps.getSecret('octankDataBase','prod');
+         user = await ssmps.getSecret('octankDbUser','prod');
+         password = await ssmps.getSecret('octankDbPassword','prod');
+         console.log(connectionString,database,user,password);
+
+		  connection = mysql.createConnection({
+			host: connectionString,
+			user: user,
+			password: password,
+			database: database,
+		});
+
+		connection.connect(function (error) {
+
+			if (!!error) {
+				console.log('Error');
+			} else {
+				console.log('Connected');
+			}
+		});
+    }
+    catch (ex) {
+        console.error(ex.message);
+    }
+})();
+
+
+
+
 app.get('/index.html', function (req, res) {
 	res.sendFile( __dirname + "/" + "index.html" );
  })
