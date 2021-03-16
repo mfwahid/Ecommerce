@@ -291,21 +291,33 @@ Resources:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
 
+  MyIamInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: MyIamInstanceProfile
+      Path: "/"
+      Roles:
+      - ec2ssm
 
   MyLaunchTemplate:
     Type: 'AWS::EC2::LaunchTemplate'
     Properties:
       LaunchTemplateName: !Sub '${AWS::StackName}-launch-template-for-auto-scaling'
       LaunchTemplateData:
+        IamInstanceProfile:
+          Arn: !GetAtt
+            - MyIamInstanceProfile
+            - Arn
         NetworkInterfaces:
           - DeviceIndex: 0
             AssociatePublicIpAddress: true
             Groups:
               - !Ref InstanceSecurityGroup
             DeleteOnTermination: true
-        ImageId: ami-087caa1a10192d415
+        ImageId: ami-017d5c93df8d9c27f
         InstanceType: t2.micro
         KeyName: EC2ConnectMum
+
   MyASG:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
@@ -315,6 +327,7 @@ Resources:
       LaunchTemplate:
         LaunchTemplateId: !Ref MyLaunchTemplate
         Version: '1'
+      #ServiceLinkedRoleARN: arn:aws:iam::408551142950:role/ec2ssm
       VPCZoneIdentifier: 
       - Ref: SubnetAPrivate
       - Ref: SubnetBPrivate
@@ -332,7 +345,7 @@ Resources:
       Matcher:
         HttpCode: '200'
       Name: EC2TargetGroup
-      Port: 80
+      Port: 3000
       Protocol: HTTP
       TargetGroupAttributes:
       - Key: deregistration_delay.timeout_seconds
@@ -348,7 +361,7 @@ Resources:
       - Key: Name
         Value: EC2TargetGroup
       - Key: Port
-        Value: 80
+        Value: 3000
 
   #ELB (ALB)
   ALBListener:
