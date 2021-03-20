@@ -1,7 +1,7 @@
 ---
 
-
-Description: 'Octank Mall web application'
+# AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Octank Web'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -10,6 +10,20 @@ Metadata:
       Parameters:
       - ClassB
       - Name
+    - Label:
+        default: 'Web Server Parameter'
+      Parameters:
+      - OctankAMI
+      - WebInstanceType
+      - EC2FleetMinCapacity
+      - EC2FleetDesiredCapacity
+      - EC2FleetMaxCapacity 
+    - Label:
+        default: 'DB Parameter'
+      Parameters:
+      - DatabaseUsername
+      - DatabasePassword  
+      - DBInstanceType
 Parameters:
   ClassB:
     Description: 'Class B of VPC (10.XXX.0.0/16)'
@@ -23,6 +37,64 @@ Parameters:
     Type: String
     Default: 'OC1'
     ConstraintDescription: 'Must be a string'
+  DatabaseUsername:
+    AllowedPattern: "[a-zA-Z0-9]+"
+    ConstraintDescription: must be between 1 to 16 alphanumeric characters.
+    Description: The database admin account user name, between 1 to 16 alphanumeric characters.
+    MaxLength: '16'
+    MinLength: '1'
+    Type: String
+    Default: 'admin'
+  DatabasePassword:
+    AllowedPattern: "[a-zA-Z0-9]+"
+    ConstraintDescription: must be between 6 to 41 alphanumeric characters.
+    Description: The database admin account password, between 6 to 41 alphanumeric characters.
+    MaxLength: '41'
+    MinLength: '6'
+    NoEcho: 'true'
+    Type: String
+    Default: 'password123'
+  WebInstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t3.small
+    AllowedValues: [t2.nano, t2.micro, t2.small, t2.medium, t2.large, t2.xlarge, t2.2xlarge,
+      t3.nano, t3.micro, t3.small, t3.medium, t3.large, t3.xlarge, t3.2xlarge,
+      m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge, m4.10xlarge,
+      m5.large, m5.xlarge, m5.2xlarge, m5.4xlarge,
+      c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge, c5.9xlarge,
+      g3.8xlarge,
+      r5.large, r5.xlarge, r5.2xlarge, r5.4xlarge, r3.12xlarge,
+      i3.xlarge, i3.2xlarge, i3.4xlarge, i3.8xlarge,
+      d2.xlarge, d2.2xlarge, d2.4xlarge, d2.8xlarge]
+    ConstraintDescription: must be a valid EC2 instance type.
+  DBInstanceType:
+    Description: DBServer EC2 instance type
+    Type: String
+    Default: t3.medium
+    AllowedValues: [t3.medium, t3.large, t3.xlarge, t3.2xlarge,
+      r5.large, r5.xlarge, r5.2xlarge, r5.4xlarge, r3.12xlarge]
+    ConstraintDescription: must be a valid EC2 instance type.
+  EC2FleetMinCapacity:
+    Description: ASG EC2 fleet min capacity
+    Type: String
+    Default: '0'
+    ConstraintDescription: must be a valid number
+  EC2FleetDesiredCapacity:
+    Description: ASG EC2 fleet Desired capacity
+    Type: String
+    Default: '0'
+    ConstraintDescription: must be a valid number
+  EC2FleetMaxCapacity:
+    Description: ASG EC2 fleet Max capacity
+    Type: String
+    Default: '0'
+    ConstraintDescription: must be a valid number
+  OctankAMI:
+    Description: AMI for the Octank Web server
+    Type: String
+    Default: 'ami-017d5c93df8d9c27f'
+    ConstraintDescription: must be a valid AMI ARN
 Resources:
   VPC:
     Type: 'AWS::EC2::VPC'
@@ -291,30 +363,43 @@ Resources:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
 
+  IamInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: IamInstanceProfile
+      Path: "/"
+      Roles:
+      - ec2ssm
 
   LaunchTemplate:
     Type: 'AWS::EC2::LaunchTemplate'
     Properties:
       LaunchTemplateName: !Sub '${AWS::StackName}-launch-template-for-auto-scaling'
       LaunchTemplateData:
+        IamInstanceProfile:
+          Arn: !GetAtt
+            - IamInstanceProfile
+            - Arn
         NetworkInterfaces:
           - DeviceIndex: 0
             AssociatePublicIpAddress: true
             Groups:
               - !Ref InstanceSecurityGroup
             DeleteOnTermination: true
-        ImageId: ami-087caa1a10192d415
-        InstanceType: t2.micro
+        ImageId: !Ref OctankAMI
+        InstanceType: !Ref WebInstanceType
         KeyName: EC2ConnectMum
+
   ASG:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
-      MinSize: '0'
-      MaxSize: '1'
-      DesiredCapacity: '1'
+      MinSize: !Ref EC2FleetMinCapacity
+      MaxSize: !Ref EC2FleetDesiredCapacity
+      DesiredCapacity: !Ref EC2FleetMaxCapacity
       LaunchTemplate:
         LaunchTemplateId: !Ref LaunchTemplate
         Version: '1'
+      #ServiceLinkedRoleARN: arn:aws:iam::408551142950:role/ec2ssm
       VPCZoneIdentifier: 
       - Ref: SubnetAPrivate
       - Ref: SubnetBPrivate
@@ -332,11 +417,15 @@ Resources:
       Matcher:
         HttpCode: '200'
       Name: EC2TargetGroup
-      Port: 80
+      Port: 3000
       Protocol: HTTP
       TargetGroupAttributes:
       - Key: deregistration_delay.timeout_seconds
         Value: '20'
+      #Targets:
+      #- Id:
+      #    Ref: AmazonLinuxInstance
+      #  Port: 80
       UnhealthyThresholdCount: 3
       VpcId:
         Ref: 'VPC'
@@ -344,7 +433,7 @@ Resources:
       - Key: Name
         Value: EC2TargetGroup
       - Key: Port
-        Value: 80
+        Value: 3000
 
   #ELB (ALB)
   ALBListener:
@@ -358,6 +447,7 @@ Resources:
           Ref: ApplicationLoadBalancer
       Port: 80
       Protocol: HTTP
+
   ApplicationLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
@@ -368,66 +458,80 @@ Resources:
       SecurityGroups:
       - Ref: ALBSecurityGroup
 
-  # RDSCluster: 
-  #   Properties: 
-  #     DBClusterParameterGroupName: 
-  #       Ref: RDSDBClusterParameterGroup
-  #     DBSubnetGroupName: 
-  #       Ref: DBSubnetGroup
-  #     Engine: aurora
-  #     MasterUserPassword: 
-  #       Ref: 'password@123'
-  #     MasterUsername: 
-  #       Ref: 'admin'
-  #   Type: "AWS::RDS::DBCluster"
-  # RDSDBClusterParameterGroup: 
-  #   Properties: 
-  #     Description: "CloudFormation Sample Aurora Cluster Parameter Group"
-  #     Family: aurora5.6
-  #     Parameters: 
-  #       time_zone: US/Eastern
-  #   Type: "AWS::RDS::DBClusterParameterGroup"
-  # RDSDBInstance1: 
-  #   Properties: 
-  #     AvailabilityZone: 
-  #       Fn::GetAtt:
-  #         - Subnet1
-  #         - AvailabilityZone
-  #     DBClusterIdentifier: 
-  #       Ref: RDSCluster
-  #     DBInstanceClass: db.r3.xlarge
-  #     DBParameterGroupName: 
-  #       Ref: RDSDBParameterGroup
-  #     DBSubnetGroupName: 
-  #       Ref: DBSubnetGroup
-  #     Engine: aurora
-  #     PubliclyAccessible: "true"
-  #   Type: "AWS::RDS::DBInstance"
-  # RDSDBInstance2: 
-  #   Properties: 
-  #     AvailabilityZone: 
-  #       Fn::GetAtt:
-  #         - Subnet2
-  #         - AvailabilityZone
-  #     DBClusterIdentifier: 
-  #       Ref: RDSCluster
-  #     DBInstanceClass: db.r3.xlarge
-  #     DBParameterGroupName: 
-  #       Ref: RDSDBParameterGroup
-  #     DBSubnetGroupName: 
-  #       Ref: DBSubnetGroup
-  #     Engine: aurora
-  #     PubliclyAccessible: "true"
-  #   Type: "AWS::RDS::DBInstance"
-  # RDSDBParameterGroup:
-  #   Type: 'AWS::RDS::DBParameterGroup'
-  #   Properties:
-  #     Description: CloudFormation Sample Aurora Parameter Group
-  #     Family: aurora5.6
-  #     Parameters:
-  #       sql_mode: IGNORE_SPACE
-  #       max_allowed_packet: 1024
-  #       innodb_buffer_pool_size: '{DBInstanceClassMemory*3/4}'        
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: CloudFormation managed DB subnet group.
+      SubnetIds: 
+      - Ref: SubnetBPublic
+      - Ref: SubnetAPublic
+
+  RDSCluster: 
+    Properties: 
+      DBClusterParameterGroupName: 
+        Ref: RDSDBClusterParameterGroup
+      DBSubnetGroupName: 
+        Ref: DBSubnetGroup
+      Engine: aurora
+      MasterUserPassword: !Ref DatabasePassword
+      MasterUsername: !Ref DatabaseUsername
+      DatabaseName: "ecommerceDemo"
+      DBClusterIdentifier: "OctankDB"
+    Type: "AWS::RDS::DBCluster"
+  RDSDBClusterParameterGroup: 
+    Properties: 
+      Description: "CloudFormation Sample Aurora Cluster Parameter Group"
+      Family: aurora5.6
+      Parameters: 
+        time_zone: Asia/Calcutta
+    Type: "AWS::RDS::DBClusterParameterGroup"
+  RDSDBInstance1: 
+    Properties: 
+      AvailabilityZone: 
+        Fn::GetAtt:
+          - SubnetAPublic
+          - AvailabilityZone
+      DBClusterIdentifier: 
+        Ref: RDSCluster
+      DBInstanceClass: db.t3.medium
+      DBParameterGroupName: 
+        Ref: RDSDBParameterGroup
+      DBSecurityGroups:
+      - !Ref DBSecurityGroup  
+      DBSubnetGroupName: 
+        Ref: DBSubnetGroup
+      Engine: aurora
+      PubliclyAccessible: "true"
+      DBInstanceIdentifier: "OctankDB1"
+    Type: "AWS::RDS::DBInstance"
+  RDSDBInstance2: 
+    Properties: 
+      AvailabilityZone: 
+        Fn::GetAtt:
+          - SubnetBPublic
+          - AvailabilityZone
+      DBClusterIdentifier: 
+        Ref: RDSCluster
+      DBInstanceClass: db.t3.medium
+      DBParameterGroupName: 
+        Ref: RDSDBParameterGroup
+      DBSecurityGroups:
+      - !Ref DBSecurityGroup    
+      DBSubnetGroupName: 
+        Ref: DBSubnetGroup
+      Engine: aurora
+      PubliclyAccessible: "true"
+      DBInstanceIdentifier: "OctankDB2"
+    Type: "AWS::RDS::DBInstance"
+  RDSDBParameterGroup:
+    Type: 'AWS::RDS::DBParameterGroup'
+    Properties:
+      Description: CloudFormation Sample Aurora Parameter Group
+      Family: aurora5.6
+      Parameters:
+        sql_mode: IGNORE_SPACE
+        max_allowed_packet: 1024
+        innodb_buffer_pool_size: '{DBInstanceClassMemory*3/4}'     
 
  
 Outputs:
@@ -535,3 +639,6 @@ Outputs:
     Value: !Ref RouteTableBPrivate
     Export:
       Name: !Sub '${AWS::StackName}-RouteTableBPrivate'
+  DatabaseEndpoint: 
+    Description: The database endpoint
+    Value: !GetAtt RDSCluster.Endpoint.Address

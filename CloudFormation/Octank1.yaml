@@ -1,7 +1,7 @@
 ---
 
 # AWSTemplateFormatVersion: '2010-09-09'
-Description: 'VPC: public and private subnets in two availability zones'
+Description: 'Octank Web'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -10,6 +10,12 @@ Metadata:
       Parameters:
       - ClassB
       - Name
+    - Label:
+        default: 'DB Parameter'
+      Parameters:
+      - DatabaseUsername
+      - DatabasePassword  
+
 Parameters:
   ClassB:
     Description: 'Class B of VPC (10.XXX.0.0/16)'
@@ -23,6 +29,36 @@ Parameters:
     Type: String
     Default: 'OC1'
     ConstraintDescription: 'Must be a string'
+  DatabaseUsername:
+    AllowedPattern: "[a-zA-Z0-9]+"
+    ConstraintDescription: must be between 1 to 16 alphanumeric characters.
+    Description: The database admin account user name, between 1 to 16 alphanumeric characters.
+    MaxLength: '16'
+    MinLength: '1'
+    Type: String
+    Default: 'admin'
+  DatabasePassword:
+    AllowedPattern: "[a-zA-Z0-9]+"
+    ConstraintDescription: must be between 6 to 41 alphanumeric characters.
+    Description: The database admin account password, between 6 to 41 alphanumeric characters.
+    MaxLength: '41'
+    MinLength: '6'
+    NoEcho: 'true'
+    Type: String
+    Default: 'password123'
+
+
+Mappings:
+  '408551142950':
+    ap-south-1:
+      Subnets:
+        - SubnetAPrivate
+        - SubnetBPrivate
+      SecurityGroups:
+        - DBSecurityGroup
+      InstanceType: db.r4.large
+      BackupRetentionPeriod: 7
+
 Resources:
   VPC:
     Type: 'AWS::EC2::VPC'
@@ -291,22 +327,22 @@ Resources:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
 
-  MyIamInstanceProfile:
+  IamInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
-      InstanceProfileName: MyIamInstanceProfile
+      InstanceProfileName: IamInstanceProfile
       Path: "/"
       Roles:
       - ec2ssm
 
-  MyLaunchTemplate:
+  LaunchTemplate:
     Type: 'AWS::EC2::LaunchTemplate'
     Properties:
       LaunchTemplateName: !Sub '${AWS::StackName}-launch-template-for-auto-scaling'
       LaunchTemplateData:
         IamInstanceProfile:
           Arn: !GetAtt
-            - MyIamInstanceProfile
+            - IamInstanceProfile
             - Arn
         NetworkInterfaces:
           - DeviceIndex: 0
@@ -318,14 +354,14 @@ Resources:
         InstanceType: t2.micro
         KeyName: EC2ConnectMum
 
-  MyASG:
+  ASG:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       MinSize: '0'
       MaxSize: '1'
       DesiredCapacity: '1'
       LaunchTemplate:
-        LaunchTemplateId: !Ref MyLaunchTemplate
+        LaunchTemplateId: !Ref LaunchTemplate
         Version: '1'
       #ServiceLinkedRoleARN: arn:aws:iam::408551142950:role/ec2ssm
       VPCZoneIdentifier: 
@@ -375,6 +411,7 @@ Resources:
           Ref: ApplicationLoadBalancer
       Port: 80
       Protocol: HTTP
+
   ApplicationLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
@@ -385,7 +422,43 @@ Resources:
       SecurityGroups:
       - Ref: ALBSecurityGroup
 
+  DatabaseSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: CloudFormation managed DB subnet group.
+      SubnetIds: !FindInMap [!Ref "AWS::AccountId", !Ref "AWS::Region", "Subnets"]
+
+  DatabaseCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      Engine: aurora
+      MasterUsername: !Ref "DatabaseUsername"
+      MasterUserPassword: !Ref "DatabasePassword"
+      BackupRetentionPeriod: !FindInMap [!Ref "AWS::AccountId", !Ref "AWS::Region", "BackupRetentionPeriod"]
+      PreferredBackupWindow: 01:00-02:00
+      PreferredMaintenanceWindow: mon:03:00-mon:04:00
+      DBSubnetGroupName: !Ref "DatabaseSubnetGroup"
+      VpcSecurityGroupIds: !FindInMap [!Ref "AWS::AccountId", !Ref "AWS::Region", "SecurityGroups"]
+
+  DatabasePrimaryInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: aurora
+      DBClusterIdentifier: !Ref "DatabaseCluster"
+      DBInstanceClass: !FindInMap [!Ref "AWS::AccountId", !Ref "AWS::Region", "InstanceType"]
+      DBSubnetGroupName: !Ref "DatabaseSubnetGroup"
+
+  DatabaseReplicaInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: aurora
+      DBClusterIdentifier: !Ref "DatabaseCluster"
+      DBInstanceClass: !FindInMap [!Ref "AWS::AccountId", !Ref "AWS::Region", "InstanceType"]
+      DBSubnetGroupName: !Ref "DatabaseSubnetGroup"        
+
+
   # RDSCluster: 
+  #   Type: "AWS::RDS::DBCluster"
   #   Properties: 
   #     DBClusterParameterGroupName: 
   #       Ref: RDSDBClusterParameterGroup
@@ -396,14 +469,15 @@ Resources:
   #       Ref: 'password@123'
   #     MasterUsername: 
   #       Ref: 'admin'
-  #   Type: "AWS::RDS::DBCluster"
+    
   # RDSDBClusterParameterGroup: 
+  #   Type: "AWS::RDS::DBClusterParameterGroup"
   #   Properties: 
   #     Description: "CloudFormation Sample Aurora Cluster Parameter Group"
   #     Family: aurora5.6
   #     Parameters: 
   #       time_zone: US/Eastern
-  #   Type: "AWS::RDS::DBClusterParameterGroup"
+    
   # RDSDBInstance1: 
   #   Properties: 
   #     AvailabilityZone: 
