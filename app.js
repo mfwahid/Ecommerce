@@ -5,12 +5,12 @@ const app = express();
 
 app.set('view engine', 'ejs');
 
-//app.set('views', '/home/ec2-user/mygit/ecommerce-demo/views');
-//app.use(express.static('/home/ec2-user/mygit/ecommerce-demo/public'));
+app.set('views', '/home/ec2-user/mygit/ecommerce-demo/views');
+app.use(express.static('/home/ec2-user/mygit/ecommerce-demo/public'));
 
 
-app.set('views', '/Users/bdwahee/Waheed/Works/POC/Github/Octank/Ecommerce/views');
-app.use(express.static('/Users/bdwahee/Waheed/Works/POC/Github/Octank/Ecommerce/public'));
+//app.set('views', '/Users/bdwahee/Waheed/Works/POC/Github/Octank/Ecommerce/views');
+//app.use(express.static('/Users/bdwahee/Waheed/Works/POC/Github/Octank/Ecommerce/public'));
 
 var connectionString, user, password;
 var connection;
